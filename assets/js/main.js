@@ -1,315 +1,219 @@
 /*
-	Hielo by TEMPLATED
-	templated.co @templatedco
-	Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
+	Big Picture by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
 */
-
-var settings = {
-
-	banner: {
-
-		// Indicators (= the clickable dots at the bottom).
-			indicators: true,
-
-		// Transition speed (in ms)
-		// For timing purposes only. It *must* match the transition speed of "#banner > article".
-			speed: 1500,
-
-		// Transition delay (in ms)
-			delay: 5000,
-
-		// Parallax intensity (between 0 and 1; higher = more intense, lower = less intense; 0 = off)
-			parallax: 0.25
-
-	}
-
-};
 
 (function($) {
 
-	skel.breakpoints({
-		xlarge:	'(max-width: 1680px)',
-		large:	'(max-width: 1280px)',
-		medium:	'(max-width: 980px)',
-		small:	'(max-width: 736px)',
-		xsmall:	'(max-width: 480px)'
-	});
+	var	$window = $(window),
+		$body = $('body'),
+		$header = $('#header'),
+		$all = $body.add($header);
 
-	/**
-	 * Applies parallax scrolling to an element's background image.
-	 * @return {jQuery} jQuery object.
-	 */
-	$.fn._parallax = (skel.vars.browser == 'ie' || skel.vars.mobile) ? function() { return $(this) } : function(intensity) {
+	// Breakpoints.
+		breakpoints({
+			xxlarge: [ '1681px',  '1920px' ],
+			xlarge:  [ '1281px',  '1680px' ],
+			large:   [ '1001px',  '1280px' ],
+			medium:  [ '737px',   '1000px' ],
+			small:   [ '481px',   '736px'  ],
+			xsmall:  [ null,      '480px'  ]
+		});
 
-		var	$window = $(window),
-			$this = $(this);
+	// Play initial animations on page load.
+		$window.on('load', function() {
+			setTimeout(function() {
+				$body.removeClass('is-preload');
+			}, 100);
+		});
 
-		if (this.length == 0 || intensity === 0)
-			return $this;
+	// Touch mode.
+		if (browser.mobile)
+			$body.addClass('is-touch');
+		else {
 
-		if (this.length > 1) {
+			breakpoints.on('<=small', function() {
+				$body.addClass('is-touch');
+			});
 
-			for (var i=0; i < this.length; i++)
-				$(this[i])._parallax(intensity);
-
-			return $this;
+			breakpoints.on('>small', function() {
+				$body.removeClass('is-touch');
+			});
 
 		}
 
-		if (!intensity)
-			intensity = 0.25;
+	// Fix: IE flexbox fix.
+		if (browser.name == 'ie') {
 
-		$this.each(function() {
+			var $main = $('.main.fullscreen'),
+				IEResizeTimeout;
 
-			var $t = $(this),
-				on, off;
+			$window
+				.on('resize.ie-flexbox-fix', function() {
 
-			on = function() {
+					clearTimeout(IEResizeTimeout);
 
-				$t.css('background-position', 'center 100%, center 100%, center 0px');
+					IEResizeTimeout = setTimeout(function() {
 
-				$window
-					.on('scroll._parallax', function() {
+						var wh = $window.height();
 
-						var pos = parseInt($window.scrollTop()) - parseInt($t.position().top);
+						$main.each(function() {
 
-						$t.css('background-position', 'center ' + (pos * (-1 * intensity)) + 'px');
+							var $this = $(this);
+
+							$this.css('height', '');
+
+							if ($this.height() <= wh)
+								$this.css('height', (wh - 50) + 'px');
+
+						});
 
 					});
 
-			};
-
-			off = function() {
-
-				$t
-					.css('background-position', '');
-
-				$window
-					.off('scroll._parallax');
-
-			};
-
-			skel.on('change', function() {
-
-				if (skel.breakpoint('medium').active)
-					(off)();
-				else
-					(on)();
-
-			});
-
-		});
-
-		$window
-			.off('load._parallax resize._parallax')
-			.on('load._parallax resize._parallax', function() {
-				$window.trigger('scroll');
-			});
-
-		return $(this);
-
-	};
-
-	/**
-	 * Custom banner slider for Slate.
-	 * @return {jQuery} jQuery object.
-	 */
-	$.fn._slider = function(options) {
-
-		var	$window = $(window),
-			$this = $(this);
-
-		if (this.length == 0)
-			return $this;
-
-		if (this.length > 1) {
-
-			for (var i=0; i < this.length; i++)
-				$(this[i])._slider(options);
-
-			return $this;
+				})
+				.triggerHandler('resize.ie-flexbox-fix');
 
 		}
 
-		// Vars.
-			var	current = 0, pos = 0, lastPos = 0,
-				slides = [], indicators = [],
-				$indicators,
-				$slides = $this.children('article'),
-				intervalId,
-				isLocked = false,
-				i = 0;
+	// Gallery.
+		$window.on('load', function() {
 
-		// Turn off indicators if we only have one slide.
-			if ($slides.length == 1)
-				options.indicators = false;
+			var $gallery = $('.gallery');
 
-		// Functions.
-			$this._switchTo = function(x, stop) {
+			$gallery.poptrox({
+				baseZIndex: 10001,
+				useBodyOverflow: false,
+				usePopupEasyClose: false,
+				overlayColor: '#1f2328',
+				overlayOpacity: 0.65,
+				usePopupDefaultStyling: false,
+				usePopupCaption: true,
+				popupLoaderText: '',
+				windowMargin: 50,
+				usePopupNav: true
+			});
 
-				if (isLocked || pos == x)
-					return;
+			// Hack: Adjust margins when 'small' activates.
+				breakpoints.on('>small', function() {
+					$gallery.each(function() {
+						$(this)[0]._poptrox.windowMargin = 50;
+					});
+				});
 
-				isLocked = true;
+				breakpoints.on('<=small', function() {
+					$gallery.each(function() {
+						$(this)[0]._poptrox.windowMargin = 5;
+					});
+				});
 
-				if (stop)
-					window.clearInterval(intervalId);
+		});
 
-				// Update positions.
-					lastPos = pos;
-					pos = x;
+	// Section transitions.
+		if (browser.canUse('transition')) {
 
-				// Hide last slide.
-					slides[lastPos].removeClass('top');
+			var on = function() {
 
-					if (options.indicators)
-						indicators[lastPos].removeClass('visible');
+				// Galleries.
+					$('.gallery')
+						.scrollex({
+							top:		'30vh',
+							bottom:		'30vh',
+							delay:		50,
+							initialize:	function() { $(this).addClass('inactive'); },
+							terminate:	function() { $(this).removeClass('inactive'); },
+							enter:		function() { $(this).removeClass('inactive'); },
+							leave:		function() { $(this).addClass('inactive'); }
+						});
 
-				// Show new slide.
-					slides[pos].addClass('visible').addClass('top');
+				// Generic sections.
+					$('.main.style1')
+						.scrollex({
+							mode:		'middle',
+							delay:		100,
+							initialize:	function() { $(this).addClass('inactive'); },
+							terminate:	function() { $(this).removeClass('inactive'); },
+							enter:		function() { $(this).removeClass('inactive'); },
+							leave:		function() { $(this).addClass('inactive'); }
+						});
 
-					if (options.indicators)
-						indicators[pos].addClass('visible');
+					$('.main.style2')
+						.scrollex({
+							mode:		'middle',
+							delay:		100,
+							initialize:	function() { $(this).addClass('inactive'); },
+							terminate:	function() { $(this).removeClass('inactive'); },
+							enter:		function() { $(this).removeClass('inactive'); },
+							leave:		function() { $(this).addClass('inactive'); }
+						});
 
-				// Finish hiding last slide after a short delay.
-					window.setTimeout(function() {
-
-						slides[lastPos].addClass('instant').removeClass('visible');
-
-						window.setTimeout(function() {
-
-							slides[lastPos].removeClass('instant');
-							isLocked = false;
-
-						}, 100);
-
-					}, options.speed);
+				// Contact.
+					$('#contact')
+						.scrollex({
+							top:		'50%',
+							delay:		50,
+							initialize:	function() { $(this).addClass('inactive'); },
+							terminate:	function() { $(this).removeClass('inactive'); },
+							enter:		function() { $(this).removeClass('inactive'); },
+							leave:		function() { $(this).addClass('inactive'); }
+						});
 
 			};
 
-		// Indicators.
-			if (options.indicators)
-				$indicators = $('<ul class="indicators"></ul>').appendTo($this);
+			var off = function() {
 
-		// Slides.
-			$slides
-				.each(function() {
+				// Galleries.
+					$('.gallery')
+						.unscrollex();
 
-					var $slide = $(this),
-						$img = $slide.find('img');
+				// Generic sections.
+					$('.main.style1')
+						.unscrollex();
 
-					// Slide.
-						$slide
-							.css('background-image', 'url("' + $img.attr('src') + '")')
-							.css('background-position', ($slide.data('position') ? $slide.data('position') : 'center'));
+					$('.main.style2')
+						.unscrollex();
 
-					// Add to slides.
-						slides.push($slide);
+				// Contact.
+					$('#contact')
+						.unscrollex();
 
-					// Indicators.
-						if (options.indicators) {
+			};
 
-							var $indicator_li = $('<li>' + i + '</li>').appendTo($indicators);
+			breakpoints.on('<=small', off);
+			breakpoints.on('>small', on);
 
-							// Indicator.
-								$indicator_li
-									.data('index', i)
-									.on('click', function() {
-										$this._switchTo($(this).data('index'), true);
-									});
+		}
 
-							// Add to indicators.
-								indicators.push($indicator_li);
+	// Events.
+		var resizeTimeout, resizeScrollTimeout;
 
-						}
+		$window
+			.on('resize', function() {
 
-					i++;
+				// Disable animations/transitions.
+					$body.addClass('is-resizing');
 
-				})
-				._parallax(options.parallax);
+				clearTimeout(resizeTimeout);
 
-		// Initial slide.
-			slides[pos].addClass('visible').addClass('top');
+				resizeTimeout = setTimeout(function() {
 
-			if (options.indicators)
-				indicators[pos].addClass('visible');
+					// Update scrolly links.
+						$('a[href^="#"]').scrolly({
+							speed: 1500,
+							offset: $header.outerHeight() - 1
+						});
 
-		// Bail if we only have a single slide.
-			if (slides.length == 1)
-				return;
+					// Re-enable animations/transitions.
+						setTimeout(function() {
+							$body.removeClass('is-resizing');
+							$window.trigger('scroll');
+						}, 0);
 
-		// Main loop.
-			intervalId = window.setInterval(function() {
-
-				current++;
-
-				if (current >= slides.length)
-					current = 0;
-
-				$this._switchTo(current);
-
-			}, options.delay);
-
-	};
-
-	$(function() {
-
-		var	$window 	= $(window),
-			$body 		= $('body'),
-			$header 	= $('#header'),
-			$banner 	= $('.banner');
-
-		// Disable animations/transitions until the page has loaded.
-			$body.addClass('is-loading');
-
-			$window.on('load', function() {
-				window.setTimeout(function() {
-					$body.removeClass('is-loading');
 				}, 100);
+
+			})
+			.on('load', function() {
+				$window.trigger('resize');
 			});
-
-		// Prioritize "important" elements on medium.
-			skel.on('+medium -medium', function() {
-				$.prioritize(
-					'.important\\28 medium\\29',
-					skel.breakpoint('medium').active
-				);
-			});
-
-		// Banner.
-			$banner._slider(settings.banner);
-
-		// Menu.
-			$('#menu')
-				.append('<a href="#menu" class="close"></a>')
-				.appendTo($body)
-				.panel({
-					delay: 250,
-					hideOnClick: true,
-					hideOnSwipe: true,
-					resetScroll: true,
-					resetForms: true,
-					side: 'right'
-				});
-
-		// Header.
-			if (skel.vars.IEVersion < 9)
-				$header.removeClass('alt');
-
-			if ($banner.length > 0
-			&&	$header.hasClass('alt')) {
-
-				$window.on('resize', function() { $window.trigger('scroll'); });
-
-				$banner.scrollex({
-					bottom:		$header.outerHeight(),
-					terminate:	function() { $header.removeClass('alt'); },
-					enter:		function() { $header.addClass('alt'); },
-					leave:		function() { $header.removeClass('alt'); $header.addClass('reveal'); }
-				});
-
-			}
-
-	});
 
 })(jQuery);
